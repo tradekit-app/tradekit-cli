@@ -1,0 +1,48 @@
+version: 2
+
+builds:
+  - main: ./cmd/tradekit
+    binary: tradekit
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X github.com/tradekit-dev/tradekit-cli/internal/cmd.version={{.Version}}
+      - -X github.com/tradekit-dev/tradekit-cli/internal/cmd.commit={{.Commit}}
+      - -X github.com/tradekit-dev/tradekit-cli/internal/cmd.date={{.Date}}
+
+archives:
+  - format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+
+brews:
+  - repository:
+      owner: tradekit-dev
+      name: homebrew-tap
+    homepage: https://tradekit.com.br
+    description: CLI client for the TradeKit trading journal platform
+    license: MIT
+    install: |
+      bin.install "tradekit"
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+      - "^chore:"
