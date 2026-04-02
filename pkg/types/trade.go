@@ -93,6 +93,33 @@ type TradeStats struct {
 	Expectancy    string  `json:"expectancy"`
 }
 
+type CreateSignalRequest struct {
+	Symbol      string  `json:"symbol"`
+	Type        string  `json:"type"`
+	Description string  `json:"description"`
+	Price       string  `json:"price"`
+	ScheduledAt *string `json:"scheduledAt,omitempty"`
+}
+
+type Signal struct {
+	ID               string  `json:"id"`
+	Symbol           string  `json:"symbol"`
+	Type             string  `json:"type"`
+	RuleName         string  `json:"ruleName"`
+	Description      string  `json:"description"`
+	Price            string  `json:"price"`
+	Status           string  `json:"status"`
+	ScheduledAt      string  `json:"scheduledAt,omitempty"`
+	ExpiresAt        string  `json:"expiresAt,omitempty"`
+	ExecutionTicket  *int64  `json:"executionTicket,omitempty"`
+	ExecutionPrice   string  `json:"executionPrice,omitempty"`
+	ExecutionVolume  string  `json:"executionVolume,omitempty"`
+	ExecutionSuccess *bool   `json:"executionSuccess,omitempty"`
+	ExecutionError   string  `json:"executionError,omitempty"`
+	ExecutedAt       string  `json:"executedAt,omitempty"`
+	CreatedAt        string  `json:"createdAt"`
+}
+
 type QuickTradeRequest struct {
 	Symbol     string  `json:"symbol"`
 	Direction  string  `json:"direction"`

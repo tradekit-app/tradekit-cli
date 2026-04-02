@@ -163,6 +163,25 @@ func (c *Client) GetPortfolio(ctx context.Context) (*types.PortfolioResponse, er
 	return &types.PortfolioResponse{Positions: enriched}, nil
 }
 
+func (c *Client) CreateSignal(ctx context.Context, req types.CreateSignalRequest) (*types.Signal, error) {
+	resp, err := Do[types.Signal](ctx, c, http.MethodPost, "/api/signals", req, nil)
+	if err != nil {
+		return nil, err
+	}
+	return &resp.Data, nil
+}
+
+func (c *Client) ListPendingSignals(ctx context.Context) ([]types.Signal, error) {
+	type pendingResp struct {
+		Signals []types.Signal `json:"signals"`
+	}
+	resp, err := Do[pendingResp](ctx, c, http.MethodGet, "/api/signals/pending", nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Data.Signals, nil
+}
+
 func (c *Client) GetDashboard(ctx context.Context) (*types.DashboardResponse, error) {
 	resp, err := Do[types.DashboardResponse](ctx, c, http.MethodGet, "/api/trades/dashboard", nil, nil)
 	if err != nil {
