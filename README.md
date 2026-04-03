@@ -48,17 +48,41 @@ tradekit trade stats
 
 | Command | Description |
 |---------|-------------|
+| **Auth** | |
 | `tradekit auth login` | Log in to TradeKit |
 | `tradekit auth logout` | Log out |
 | `tradekit auth status` | Show current user info |
 | `tradekit auth apikey create` | Create an API key |
+| **Trading** | |
 | `tradekit trade list` | List trades (with filters) |
 | `tradekit trade get <id>` | Trade details |
 | `tradekit trade positions` | Open positions |
-| `tradekit trade stats` | Trading statistics |
-| `tradekit market quote <symbol>` | Real-time quote |
+| `tradekit trade portfolio` | Positions with live market prices |
+| `tradekit trade export` | Export all trades (no pagination) |
+| `tradekit trade today` | Today's trades and stats |
+| `tradekit trade add <symbol> <dir> <price> <qty>` | Quick-add a trade |
+| `tradekit dashboard` | Full trading dashboard summary |
+| **Signals (MT5)** | |
+| `tradekit signal buy <symbol> <price>` | Send buy signal to MT5 |
+| `tradekit signal sell <symbol> <price>` | Send sell signal to MT5 |
+| `tradekit signal close <symbol>` | Send close/exit signal |
+| `tradekit signal buy VALE3 83 --tomorrow` | Schedule for market open |
+| `tradekit signal buy PETR4 47 -q 500` | Buy with specific quantity |
+| `tradekit signal list` | List all signals (all statuses) |
+| `tradekit signal status <id>` | Detailed execution results |
+| **Risk Rules** | |
+| `tradekit rules set max-daily-loss 2.0` | Set risk guardrail |
+| `tradekit rules set max-exposure 60` | Limit total exposure |
+| `tradekit rules set trading-hours 09:00 17:30` | Trading window |
+| `tradekit rules list` | View active rules |
+| `tradekit rules violations` | View blocked signals |
+| **Market Data** | |
+| `tradekit market quote <symbol> [symbol2...]` | Real-time quote(s) |
 | `tradekit market search <query>` | Symbol search |
 | `tradekit market history <symbol>` | Historical OHLCV |
+| **MT5** | |
+| `tradekit mt5 account` | MT5 balance, equity, positions |
+| **Config** | |
 | `tradekit config set <key> <value>` | Set config value |
 | `tradekit version` | Version info |
 
