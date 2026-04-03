@@ -182,6 +182,84 @@ func (c *Client) ListPendingSignals(ctx context.Context) ([]types.Signal, error)
 	return resp.Data.Signals, nil
 }
 
+type ListSignalsOptions struct {
+	Status string
+	Symbol string
+	Limit  int
+}
+
+func (c *Client) ListAllSignals(ctx context.Context, opts ListSignalsOptions) ([]types.Signal, error) {
+	params := url.Values{}
+	if opts.Status != "" {
+		params.Set("status", opts.Status)
+	}
+	if opts.Symbol != "" {
+		params.Set("symbol", opts.Symbol)
+	}
+	limit := 20
+	if opts.Limit > 0 {
+		limit = opts.Limit
+	}
+	params.Set("per_page", fmt.Sprintf("%d", limit))
+
+	resp, err := Do[[]types.Signal](ctx, c, http.MethodGet, "/api/signals", nil, params)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Data, nil
+}
+
+func (c *Client) ListRiskRules(ctx context.Context, accountID string) ([]types.RiskRule, error) {
+	params := url.Values{}
+	if accountID != "" {
+		params.Set("account_id", accountID)
+	}
+	resp, err := Do[[]types.RiskRule](ctx, c, http.MethodGet, "/api/risk-rules", nil, params)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Data, nil
+}
+
+func (c *Client) CreateRiskRule(ctx context.Context, req types.CreateRiskRuleRequest) (*types.RiskRule, error) {
+	resp, err := Do[types.RiskRule](ctx, c, http.MethodPost, "/api/risk-rules", req, nil)
+	if err != nil {
+		return nil, err
+	}
+	return &resp.Data, nil
+}
+
+func (c *Client) DeleteRiskRule(ctx context.Context, id string) error {
+	_, err := Do[any](ctx, c, http.MethodDelete, "/api/risk-rules/"+id, nil, nil)
+	return err
+}
+
+func (c *Client) ListRiskViolations(ctx context.Context) ([]types.RiskViolation, error) {
+	resp, err := Do[[]types.RiskViolation](ctx, c, http.MethodGet, "/api/risk-violations", nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Data, nil
+}
+
+func (c *Client) GetMT5Account(ctx context.Context, connectionID string) (*types.MT5AccountResponse, error) {
+	params := url.Values{}
+	params.Set("connectionId", connectionID)
+	resp, err := Do[types.MT5AccountResponse](ctx, c, http.MethodGet, "/api/mt5/account", nil, params)
+	if err != nil {
+		return nil, err
+	}
+	return &resp.Data, nil
+}
+
+func (c *Client) GetSignal(ctx context.Context, id string) (*types.Signal, error) {
+	resp, err := Do[types.Signal](ctx, c, http.MethodGet, "/api/signals/"+id, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	return &resp.Data, nil
+}
+
 func (c *Client) GetDashboard(ctx context.Context) (*types.DashboardResponse, error) {
 	resp, err := Do[types.DashboardResponse](ctx, c, http.MethodGet, "/api/trades/dashboard", nil, nil)
 	if err != nil {

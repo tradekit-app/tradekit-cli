@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/tradekit-dev/tradekit-cli/internal/client"
 	"github.com/tradekit-dev/tradekit-cli/pkg/types"
 )
 
@@ -49,38 +50,128 @@ var signalCloseCmd = &cobra.Command{
 
 var signalListCmd = &cobra.Command{
 	Use:   "list",
-	Short: "List pending signals",
+	Short: "List recent signals (all statuses)",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := getClient(cmd)
-		signals, err := c.ListPendingSignals(cmd.Context())
+		pendingOnly, _ := cmd.Flags().GetBool("pending")
+
+		if pendingOnly {
+			signals, err := c.ListPendingSignals(cmd.Context())
+			if err != nil {
+				return err
+			}
+			if len(signals) == 0 {
+				fmt.Println("No pending signals.")
+				return nil
+			}
+			printSignals(signals)
+			return nil
+		}
+
+		status, _ := cmd.Flags().GetString("status")
+		symbol, _ := cmd.Flags().GetString("symbol")
+		limit, _ := cmd.Flags().GetInt("limit")
+
+		signals, err := c.ListAllSignals(cmd.Context(), client.ListSignalsOptions{
+			Status: status,
+			Symbol: symbol,
+			Limit:  limit,
+		})
 		if err != nil {
 			return err
 		}
 		if len(signals) == 0 {
-			fmt.Println("No pending signals.")
+			fmt.Println("No signals found.")
 			return nil
 		}
-		for _, s := range signals {
-			extra := ""
-			if s.Status == "scheduled" && s.ScheduledAt != "" {
-				extra = "  scheduled: " + s.ScheduledAt[:16]
-			}
-			if s.ExecutionSuccess != nil {
-				if *s.ExecutionSuccess {
-					extra = fmt.Sprintf("  executed: ticket=%d price=%s", *s.ExecutionTicket, s.ExecutionPrice)
-				} else {
-					extra = "  FAILED: " + s.ExecutionError
-				}
-			}
-			expiresStr := ""
-			if len(s.ExpiresAt) >= 16 {
-				expiresStr = s.ExpiresAt[:16]
-			}
-			fmt.Printf("  %s  %s  %s  @ %s  [%s]  expires: %s%s\n",
-				s.ID[:8]+"...", s.Symbol, s.Type, s.Price, s.Status, expiresStr, extra)
-		}
+		printSignals(signals)
 		return nil
 	},
+}
+
+var signalStatusCmd = &cobra.Command{
+	Use:   "status <id>",
+	Short: "Show detailed status of a signal",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c := getClient(cmd)
+		signal, err := c.GetSignal(cmd.Context(), args[0])
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Signal: %s\n", signal.ID)
+		fmt.Printf("  Symbol:      %s\n", signal.Symbol)
+		fmt.Printf("  Type:        %s\n", signal.Type)
+		fmt.Printf("  Price:       %s\n", signal.Price)
+		fmt.Printf("  Status:      %s\n", signal.Status)
+		fmt.Printf("  Description: %s\n", signal.Description)
+		fmt.Printf("  Created:     %s\n", signal.CreatedAt[:19])
+
+		if signal.ScheduledAt != "" {
+			fmt.Printf("  Scheduled:   %s\n", signal.ScheduledAt[:19])
+		}
+		if signal.ExpiresAt != "" && len(signal.ExpiresAt) >= 19 {
+			fmt.Printf("  Expires:     %s\n", signal.ExpiresAt[:19])
+		}
+
+		if signal.ExecutionSuccess != nil {
+			fmt.Println()
+			fmt.Println("  Execution Results:")
+			if *signal.ExecutionSuccess {
+				fmt.Println("    Status:    SUCCESS")
+			} else {
+				fmt.Println("    Status:    FAILED")
+			}
+			if signal.ExecutionTicket != nil {
+				fmt.Printf("    Ticket:    %d\n", *signal.ExecutionTicket)
+			}
+			if signal.ExecutionPrice != "" {
+				fmt.Printf("    Fill:      %s\n", signal.ExecutionPrice)
+			}
+			if signal.ExecutionVolume != "" {
+				fmt.Printf("    Volume:    %s\n", signal.ExecutionVolume)
+			}
+			if signal.ExecutionError != "" {
+				fmt.Printf("    Error:     %s\n", signal.ExecutionError)
+			}
+			if signal.ExecutedAt != "" && len(signal.ExecutedAt) >= 19 {
+				fmt.Printf("    Executed:  %s\n", signal.ExecutedAt[:19])
+			}
+		}
+
+		return nil
+	},
+}
+
+func printSignals(signals []types.Signal) {
+	for _, s := range signals {
+		extra := ""
+		if s.Status == "scheduled" && s.ScheduledAt != "" && len(s.ScheduledAt) >= 16 {
+			extra = "  scheduled: " + s.ScheduledAt[:16]
+		}
+		if s.ExecutionSuccess != nil {
+			if *s.ExecutionSuccess {
+				ticket := int64(0)
+				if s.ExecutionTicket != nil {
+					ticket = *s.ExecutionTicket
+				}
+				extra = fmt.Sprintf("  executed: ticket=%d price=%s", ticket, s.ExecutionPrice)
+			} else {
+				extra = "  FAILED: " + s.ExecutionError
+			}
+		}
+		expiresStr := ""
+		if len(s.ExpiresAt) >= 16 {
+			expiresStr = s.ExpiresAt[:16]
+		}
+		idStr := s.ID
+		if len(idStr) > 8 {
+			idStr = idStr[:8] + "..."
+		}
+		fmt.Printf("  %s  %-8s  %-5s  @ %-8s  [%-12s]  %s%s\n",
+			idStr, s.Symbol, s.Type, s.Price, s.Status, expiresStr, extra)
+	}
 }
 
 func sendSignal(cmd *cobra.Command, symbol, signalType, direction, price string) error {
@@ -103,6 +194,10 @@ func sendSignal(cmd *cobra.Command, symbol, signalType, direction, price string)
 		Type:        signalType,
 		Description: desc,
 		Price:       price,
+	}
+
+	if qty, _ := cmd.Flags().GetString("quantity"); qty != "" {
+		req.Quantity = &qty
 	}
 
 	// Parse scheduling flags
@@ -173,21 +268,29 @@ func parseScheduledAt(cmd *cobra.Command) (*string, error) {
 
 func init() {
 	signalBuyCmd.Flags().String("notes", "", "Signal description/notes")
+	signalBuyCmd.Flags().StringP("quantity", "q", "", "Number of shares (e.g., 500)")
 	signalBuyCmd.Flags().String("at", "", "Schedule for specific time (e.g., '2026-04-02 09:00')")
 	signalBuyCmd.Flags().Bool("tomorrow", false, "Schedule for tomorrow at market open (09:00 BRT)")
 	signalBuyCmd.Flags().String("delay", "", "Delay signal by duration (e.g., 30m, 2h)")
 
 	signalSellCmd.Flags().String("notes", "", "Signal description/notes")
+	signalSellCmd.Flags().StringP("quantity", "q", "", "Number of shares")
 	signalSellCmd.Flags().String("at", "", "Schedule for specific time")
 	signalSellCmd.Flags().Bool("tomorrow", false, "Schedule for tomorrow at market open")
 	signalSellCmd.Flags().String("delay", "", "Delay signal by duration")
 
 	signalCloseCmd.Flags().String("notes", "", "Signal description/notes")
 
+	signalListCmd.Flags().Bool("pending", false, "Show only pending/scheduled signals")
+	signalListCmd.Flags().String("status", "", "Filter by status: pending, scheduled, acted_on, expired, dismissed")
+	signalListCmd.Flags().StringP("symbol", "s", "", "Filter by symbol")
+	signalListCmd.Flags().IntP("limit", "n", 20, "Max results")
+
 	signalCmd.AddCommand(signalBuyCmd)
 	signalCmd.AddCommand(signalSellCmd)
 	signalCmd.AddCommand(signalCloseCmd)
 	signalCmd.AddCommand(signalListCmd)
+	signalCmd.AddCommand(signalStatusCmd)
 
 	rootCmd.AddCommand(signalCmd)
 }

@@ -98,6 +98,7 @@ type CreateSignalRequest struct {
 	Type        string  `json:"type"`
 	Description string  `json:"description"`
 	Price       string  `json:"price"`
+	Quantity    *string `json:"quantity,omitempty"`
 	ScheduledAt *string `json:"scheduledAt,omitempty"`
 }
 
@@ -146,6 +147,57 @@ type Position struct {
 	TotalQuantity float64 `json:"totalQuantity"`
 	AvgEntryPrice float64 `json:"avgEntryPrice"`
 	TotalCosts    float64 `json:"totalCosts"`
+}
+
+type CreateRiskRuleRequest struct {
+	TradingAccountID string         `json:"tradingAccountId"`
+	StrategyID       *string        `json:"strategyId,omitempty"`
+	Scope            string         `json:"scope"`
+	RuleType         string         `json:"ruleType"`
+	Params           map[string]any `json:"params"`
+}
+
+type RiskRule struct {
+	ID               string         `json:"id"`
+	TradingAccountID string         `json:"tradingAccountId"`
+	Scope            string         `json:"scope"`
+	RuleType         string         `json:"ruleType"`
+	Params           map[string]any `json:"params"`
+	Enabled          bool           `json:"enabled"`
+	CreatedAt        string         `json:"createdAt"`
+}
+
+type RiskViolation struct {
+	ID          string `json:"id"`
+	RuleType    string `json:"ruleType"`
+	Symbol      string `json:"symbol"`
+	Description string `json:"description"`
+	CreatedAt   string `json:"createdAt"`
+}
+
+type MT5AccountInfo struct {
+	Balance    float64 `json:"balance"`
+	Equity     float64 `json:"equity"`
+	Margin     float64 `json:"margin"`
+	FreeMargin float64 `json:"freeMargin"`
+	Leverage   int     `json:"leverage"`
+	Currency   string  `json:"currency"`
+}
+
+type MT5Position struct {
+	Ticket     int64   `json:"ticket"`
+	Symbol     string  `json:"symbol"`
+	Type       string  `json:"type"`
+	Volume     float64 `json:"volume"`
+	OpenPrice  float64 `json:"openPrice"`
+	StopLoss   float64 `json:"stopLoss"`
+	TakeProfit float64 `json:"takeProfit"`
+	Profit     float64 `json:"profit"`
+}
+
+type MT5AccountResponse struct {
+	Account   *MT5AccountInfo `json:"account"`
+	Positions []MT5Position   `json:"positions"`
 }
 
 type DashboardResponse struct {
