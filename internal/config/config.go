@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	DefaultBaseURL = "https://api.tradekit.com.br"
+	DefaultBaseURL = "https://gateway-202557329647.southamerica-east1.run.app"
 	DefaultOutput  = "table"
 )
 
