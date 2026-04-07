@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const defaultConnectionID = "a9d16ae9-45c5-44e1-8e62-1c300fb7aa7f"
+const defaultConnectionID = "ff7ceb06-ae94-4341-8898-edb899a6360b"
 
 var mt5Cmd = &cobra.Command{
 	Use:   "mt5",
