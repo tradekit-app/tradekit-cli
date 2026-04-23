@@ -25,13 +25,14 @@ the latest backtest. Matches the web app leaderboard logic.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := getClient(cmd)
 		ctx := cmd.Context()
+		accountID := getAccountID(cmd)
 
 		strategies, err := c.ListStrategies(ctx, 100)
 		if err != nil {
 			return fmt.Errorf("listing strategies: %w", err)
 		}
 
-		entries := buildLeaderboard(ctx, c, strategies)
+		entries := buildLeaderboard(ctx, c, strategies, accountID)
 
 		format, _ := cmd.Flags().GetString("output")
 		if format == "json" {
@@ -65,7 +66,7 @@ func categoryFromTags(tags []string) string {
 	}
 }
 
-func buildLeaderboard(ctx context.Context, c *client.Client, strategies []types.Strategy) []types.LeaderboardEntry {
+func buildLeaderboard(ctx context.Context, c *client.Client, strategies []types.Strategy, accountID string) []types.LeaderboardEntry {
 	type slot struct {
 		strategy types.Strategy
 		live     *types.StrategyLivePerformance
@@ -79,7 +80,7 @@ func buildLeaderboard(ctx context.Context, c *client.Client, strategies []types.
 		wg.Add(1)
 		go func(i int, s types.Strategy) {
 			defer wg.Done()
-			if live, err := c.GetStrategyLivePerformance(ctx, s.ID); err == nil {
+			if live, err := c.GetStrategyLivePerformance(ctx, s.ID, accountID); err == nil {
 				slots[i].live = live
 			}
 			if bts, err := c.GetBacktests(ctx, s.ID); err == nil && len(bts) > 0 {

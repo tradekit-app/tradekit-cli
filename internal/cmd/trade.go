@@ -203,7 +203,7 @@ var tradePortfolioCmd = &cobra.Command{
 	Short: "Show positions with current market prices",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := getClient(cmd)
-		portfolio, err := c.GetPortfolio(cmd.Context())
+		portfolio, err := c.GetPortfolio(cmd.Context(), getAccountID(cmd))
 		if err != nil {
 			return err
 		}

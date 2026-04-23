@@ -109,9 +109,9 @@ func (c *Client) QuickCreateTrade(ctx context.Context, req types.QuickTradeReque
 	return &resp.Data, nil
 }
 
-func (c *Client) GetPortfolio(ctx context.Context) (*types.PortfolioResponse, error) {
+func (c *Client) GetPortfolio(ctx context.Context, accountID string) (*types.PortfolioResponse, error) {
 	// Get open positions
-	dashResp, err := c.GetDashboard(ctx)
+	dashResp, err := c.GetDashboard(ctx, accountID)
 	if err != nil {
 		return nil, err
 	}
@@ -260,8 +260,12 @@ func (c *Client) GetSignal(ctx context.Context, id string) (*types.Signal, error
 	return &resp.Data, nil
 }
 
-func (c *Client) GetDashboard(ctx context.Context) (*types.DashboardResponse, error) {
-	resp, err := Do[types.DashboardResponse](ctx, c, http.MethodGet, "/api/trades/dashboard", nil, nil)
+func (c *Client) GetDashboard(ctx context.Context, accountID string) (*types.DashboardResponse, error) {
+	var params url.Values
+	if accountID != "" {
+		params = url.Values{"tradingAccountId": []string{accountID}}
+	}
+	resp, err := Do[types.DashboardResponse](ctx, c, http.MethodGet, "/api/trades/dashboard", nil, params)
 	if err != nil {
 		return nil, err
 	}

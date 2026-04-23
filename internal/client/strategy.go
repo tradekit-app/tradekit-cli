@@ -27,9 +27,13 @@ func (c *Client) ListStrategies(ctx context.Context, perPage int) ([]types.Strat
 	return resp.Data, nil
 }
 
-func (c *Client) GetStrategyLivePerformance(ctx context.Context, id string) (*types.StrategyLivePerformance, error) {
+func (c *Client) GetStrategyLivePerformance(ctx context.Context, id string, accountID string) (*types.StrategyLivePerformance, error) {
+	var params url.Values
+	if accountID != "" {
+		params = url.Values{"tradingAccountId": []string{accountID}}
+	}
 	resp, err := Do[types.StrategyLivePerformance](ctx, c, http.MethodGet,
-		"/api/strategies/"+id+"/live-performance", nil, nil)
+		"/api/trades/strategy/"+id+"/performance", nil, params)
 	if err != nil {
 		return nil, err
 	}
@@ -43,4 +47,25 @@ func (c *Client) GetBacktests(ctx context.Context, id string) ([]types.BacktestR
 		return nil, err
 	}
 	return resp.Data.Backtests, nil
+}
+
+// TradingAccount mirrors the API shape for an account.
+type TradingAccount struct {
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Broker   string `json:"broker"`
+	IsDemo   bool   `json:"isDemo"`
+	IsActive bool   `json:"isActive"`
+}
+
+type tradingAccountsResponse struct {
+	Accounts []TradingAccount `json:"accounts"`
+}
+
+func (c *Client) ListTradingAccounts(ctx context.Context) ([]TradingAccount, error) {
+	resp, err := Do[tradingAccountsResponse](ctx, c, http.MethodGet, "/api/trading-accounts", nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Data.Accounts, nil
 }

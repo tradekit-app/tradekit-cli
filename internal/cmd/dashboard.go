@@ -9,7 +9,7 @@ var dashboardCmd = &cobra.Command{
 	Short: "Show trading dashboard summary",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := getClient(cmd)
-		dashboard, err := c.GetDashboard(cmd.Context())
+		dashboard, err := c.GetDashboard(cmd.Context(), getAccountID(cmd))
 		if err != nil {
 			return err
 		}
