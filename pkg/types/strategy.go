@@ -1,12 +1,14 @@
 package types
 
 type Strategy struct {
-	ID       string   `json:"id"`
-	Name     string   `json:"name"`
-	Status   string   `json:"status"`
-	Tags     []string `json:"tags"`
-	Symbols  []string `json:"symbols"`
-	IsActive bool     `json:"isActive"`
+	ID             string   `json:"id"`
+	Name           string   `json:"name"`
+	Status         string   `json:"status"`         // legacy enum (active/draft/archived)
+	LifecycleStage string   `json:"lifecycleStage"` // operational state: draft/backtested/validated/paper/live/killed/archived
+	Kind           string   `json:"kind"`           // pair_trade / rule_based / quant / ml / options / ...
+	Tags           []string `json:"tags"`
+	Symbols        []string `json:"symbols"`
+	IsActive       bool     `json:"isActive"`
 }
 
 type StrategyLivePerformance struct {
