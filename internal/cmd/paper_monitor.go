@@ -101,17 +101,28 @@ to MT5.
 
 For paper strategies, no signal is emitted — only the tick log row.
 
+--preview     read-only evaluation: compute the decision without
+              persisting a tick row or mutating strategy state. Allowed
+              on any lifecycle stage (validated, draft, etc.). Use this
+              to answer "what would this strategy do today?" without
+              committing.
+
 --asOfDate is reserved for v2 PIT replay; v1 rejects values != today.`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		asOfDate, _ := cmd.Flags().GetString("asOfDate")
+		preview, _ := cmd.Flags().GetBool("preview")
 		c := getClient(cmd)
-		resp, err := c.RunTick(cmd.Context(), args[0], asOfDate)
+		resp, err := c.RunTick(cmd.Context(), args[0], asOfDate, preview)
 		if err != nil {
 			return err
 		}
-		summary := fmt.Sprintf("Tick: action=%v paperPnL=%v",
-			resp["action"], resp["paperPnL"])
+		prefix := "Tick"
+		if preview {
+			prefix = "Preview"
+		}
+		summary := fmt.Sprintf("%s: action=%v paperPnL=%v",
+			prefix, resp["action"], resp["paperPnL"])
 		return printResponse(cmd, resp, summary)
 	},
 }
@@ -201,6 +212,8 @@ func init() {
 		"one-line audit string explaining the kill (REQUIRED)")
 	_ = strategyKillCmd.MarkFlagRequired("reason")
 
+	strategyTickCmd.Flags().Bool("preview", false,
+		"compute the decision without persisting; bypasses the lifecycle gate")
 	strategyTickCmd.Flags().String("asOfDate", "",
 		"YYYY-MM-DD; v1 only honors today (PIT replay deferred to v2)")
 

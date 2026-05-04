@@ -55,10 +55,17 @@ func (c *Client) KillPaper(ctx context.Context, id, reason string) (map[string]a
 
 // RunTick calls POST /api/strategies/{id}/tick.
 // asOfDate is "YYYY-MM-DD" or "" for today; v1 only honors today.
-func (c *Client) RunTick(ctx context.Context, id, asOfDate string) (map[string]any, error) {
-	var body any
+// preview=true → server skips persistence and bypasses the lifecycle gate.
+func (c *Client) RunTick(ctx context.Context, id, asOfDate string, preview bool) (map[string]any, error) {
+	body := map[string]any{}
 	if asOfDate != "" {
-		body = map[string]string{"asOfDate": asOfDate}
+		body["asOfDate"] = asOfDate
+	}
+	if preview {
+		body["preview"] = true
+	}
+	if len(body) == 0 {
+		body = nil
 	}
 	resp, err := Do[map[string]any](ctx, c, http.MethodPost,
 		"/api/strategies/"+id+"/tick", body, nil)
